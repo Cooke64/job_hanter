@@ -4,7 +4,7 @@ from telebot import types
 
 from main import get_html, get_job
 from bd import create_user, delete_user
-bot = telebot.TeleBot("5065016412:AAH7ScOT50OK5k7-46f2ahUluw4d_xqw64g")
+bot = telebot.TeleBot("token")
 
 
 @bot.message_handler(commands=['start'])
