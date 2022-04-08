@@ -1,140 +1,139 @@
 import time
-import telebot
 from telebot import types
 
-from main import get_html, get_job
+from main import get_parsed_vacancy_page, get_requested_job, bot
 from bd import create_user, delete_user
-bot = telebot.TeleBot("token")
+
+
+bot = bot
 
 
 @bot.message_handler(commands=['start'])
-def start(message):
+def start_bot_process(message):
+    """Запускаем работу бота. Отображение начального экрана бота."""
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row("Найдем работу мечты?", "Задать вопрос", 'Курс валюты')
+    # Отображение меню из кнопок
+    markup.row("Найдем работу мечты?", "Задать вопрос",)
     file = open('main.jpg', 'rb')
     bot.send_message(
         message.chat.id,
-        text="Привет, {0.first_name}! Я помогу тебе найти работу в айти".format(
-            message.from_user),
-        reply_markup=markup)
+        text=f"Привет, {message.from_user.first_name}! Я помогу тебе найти работу в айти",
+        reply_markup=markup
+    )
+    # Отправляет изображение при начальном экране
     bot.send_photo(message.chat.id, file)
     create_user(message)
 
 
 @bot.message_handler(commands=['stop'])
-def start(message):
+def stop_bot_process(message):
+    """Завершение работы бота при команде stop."""
     bot.send_message(message.from_user.id, text='Прекращаю работу', )
     delete_user(message)
 
 
 @bot.message_handler(commands=['help'])
 def help_user(message):
+    """При команде help отображает основные команды."""
     if message.text == "/help":
         bot.send_message(
-            message.from_user.id,
-            "Напиши /start")
+            message.from_user.id, "Напиши /start"
+        )
     else:
         bot.send_message(
-            message.from_user.id,
-            "Я тебя не понимаю. Напиши /help.")
+            message.from_user.id, "Я тебя не понимаю. Напиши /help."
+        )
 
 
 @bot.message_handler(commands=['about'])
 def get_out_ifo_about(message):
+    """При команде about отображает ссылку на мой гит."""
     if message.text == "/about":
         markup = types.InlineKeyboardMarkup()
-        btn_my_site = types.InlineKeyboardButton(text='Github',
-                                                 url='https://github.com/Cooke64')
+        btn_my_site = types.InlineKeyboardButton(
+            text='Github', url='https://github.com/Cooke64'
+        )
         markup.add(btn_my_site)
-        bot.send_message(message.chat.id, "Нажми на кнопку и перейди",
-                         reply_markup=markup)
+        bot.send_message(
+            message.chat.id, "Нажми на кнопку и перейди", reply_markup=markup
+        )
 
 
-# @bot.message_handler(commands=['stop'])
-# def make_bot_stop(message):
-#     keyboard = types.InlineKeyboardMarkup()
-#     key_stop = types.InlineKeyboardButton(
-#         text='stop',
-#         callback_data='stop'
-#     )
-#     keyboard.add(key_stop)
-#     bot.send_message(message.from_user.id, text='Прекращаю работу', )
+def sender_messages(text, message, markup=None):
+    """Функция отправки сообщения в телеграм.
+    Принимает текст сообщения, конкретный чат, разметку кнопок.
+    """
+    message = bot.send_message(
+        message.chat.id,
+        text=text,
+        reply_markup=markup
+    )
+    return message
+
+
+def represent_available_choices(name, message):
+    keyboard = types.InlineKeyboardMarkup()
+    key_junior = types.InlineKeyboardButton(
+        text='Junior',
+        callback_data=f'junior + {name} + developer '
+    )
+    keyboard.add(key_junior)
+    key_middle = types.InlineKeyboardButton(
+        text='Middle ',
+        callback_data=f'middle + {name} + developer '
+    )
+    keyboard.add(key_middle)
+    text = 'Выбери уровень',
+    sender_messages(text, message, markup=keyboard)
 
 
 @bot.message_handler(content_types=['text'])
 def make_queries(message):
+    """Отображает запросы пользователя и отображает полученную информацию."""
     if message.text == "Найдем работу мечты?":
         markup = types.ReplyKeyboardMarkup(
             resize_keyboard=True,
             selective=False,
         )
         markup.row("Python?", "Java?", "Back?")
-        bot.send_message(
-            message.chat.id,
-            text="Выбери язык программирования",
-            reply_markup=markup)
+        text = "Выбери язык программирования",
+        sender_messages(text, message, markup)
+
     elif message.text == "Python?":
         name = 'python'
-        keyboard = types.InlineKeyboardMarkup()
-        key_junior = types.InlineKeyboardButton(
-            text='Junior',
-            callback_data=f'junior + {name} + developer '
-        )
-        keyboard.add(key_junior)
-        key_middle = types.InlineKeyboardButton(
-            text='Middle ',
-            callback_data=f'middle + {name} + developer '
-        )
-        keyboard.add(key_middle)
-        bot.send_message(message.from_user.id, text='Выбери уровень',
-                         reply_markup=keyboard)
+        represent_available_choices(name, message)
+
     elif message.text == "Java?":
         name = 'java'
-        keyboard = types.InlineKeyboardMarkup()
-        key_junior = types.InlineKeyboardButton(
-            text='Junior',
-            callback_data=f'junior + {name} + developer '
-        )
-        keyboard.add(key_junior)
-        key_middle = types.InlineKeyboardButton(
-            text='Middle ',
-            callback_data=f'middle + {name} + developer '
-        )
-        keyboard.add(key_middle)
-        bot.send_message(
-            message.from_user.id,
-            text='Выбери уровень',
-            reply_markup=keyboard)
+        represent_available_choices(name, message)
 
     elif message.text == "Задать вопрос":
         markup = types.ForceReply(
             selective=False,
         )
-        bot.send_message(
-            message.chat.id,
-            text="Что хочешь узнать?",
-            reply_markup=markup,
-        )
+        text = "Что хочешь узнать?",
+        sender_messages(text, message, markup)
 
     elif message.text == "Back?":
         # При нажатии кнопки Back возвращает в главное меню и
-        # вызывается функция start
-        start(message)
-        bot.send_message(
-            message.chat.id,
-            text="Вы вернулись в главное меню",
-        )
+        # вызывается функция start_bot_process
+        start_bot_process(message)
+        text = "Вы вернулись в главное меню",
+        sender_messages(text, message)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-
+    """Вывод результатов запроса на экран бота."""
     if call.data is not None:
-        bot.answer_callback_query(callback_query_id=call.id, show_alert=False,
-                                  text='Начинаю искать вакансии')
-        for a in get_html(call.data):
-            search = (get_job(a))
-            time.sleep(1)
+        bot.answer_callback_query(
+            callback_query_id=call.id,
+            show_alert=False,
+            text='Начинаю искать вакансии'
+        )
+        for a in get_parsed_vacancy_page(call.data):
+            search = (get_requested_job(a))
+            time.sleep(5)
             bot.send_message(call.message.chat.id, search)
 
 

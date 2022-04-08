@@ -1,7 +1,6 @@
 import sqlite3
 
 
-
 def create_user(message):
     connect = sqlite3.connect('user.db')
     cursor = connect.cursor()
